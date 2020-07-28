@@ -70,27 +70,27 @@ impl DFA {
         Ok(true)
     }
 
-    pub fn test(&self, input_chain: &str) -> bool {
+    pub fn test(&self, input_chain: &str) -> Result<bool, String> {
         let mut actual_state: String = self.initial_state.clone();
 
         for input in input_chain.chars() {
             if !self.alphabet.contains(&input) {
-                return false;
+                return Err(format!("O símbolo encontrado ({}) não faz parte do alfabeto: {:?}", input, self.alphabet).to_string());
             }
 
             let next_transition: Vec<&Transition> = self.transitions.iter().filter(|&t| (t.when == input) && (t.from == actual_state)).collect();
 
             if next_transition.first() == None {
-                return false;
+                return Ok(false);
             }
 
             actual_state = next_transition.first().unwrap().to.clone();
         }
 
         if actual_state == self.final_state {
-            return true;
+            Ok(true)
         } else {
-            return false;
+            Ok(false)
         }
     }
 
