@@ -9,8 +9,9 @@ pub struct Transition {
 
 // Deterministic Finite Automaton
 pub struct DFA {
-    initial_state: String,
-    final_state: String,
+    pub initial_state: String,
+    pub final_state: String,
+    pub actual_state: String,
     alphabet: HashSet<char>,
     states: HashSet<String>, // Conjunto de Estados
     transitions: HashSet<Transition> // Função de transição
@@ -42,6 +43,7 @@ impl DFA {
         Ok(DFA {
             initial_state: initial_state.to_string(),
             final_state: final_state.to_string(),
+            actual_state: initial_state.to_string(),
             alphabet: obtained_alphabet,
             states: obtained_states,
             transitions: HashSet::new()
@@ -68,6 +70,26 @@ impl DFA {
         });
 
         Ok(true)
+    }
+
+    pub fn register(&mut self, input: char) -> bool {
+        if !self.alphabet.contains(&input) {
+            return false;
+        }
+
+        let next_transition: Vec<&Transition> = self
+            .transitions
+            .iter()
+            .filter(|&t| (t.when == input) && (t.from == self.actual_state))
+            .collect();
+
+        if next_transition.first() == None {
+            return false;
+        }
+
+        self.actual_state = next_transition.first().unwrap().to.clone();
+
+        true
     }
 
     pub fn test(&self, input_chain: &str) -> bool {
