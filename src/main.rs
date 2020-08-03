@@ -14,15 +14,17 @@ fn main() {
 
     // dfa.show();
 
-    let html_page: String = lib::web::get_page();
+    let html_page = lib::web::get_page("https://url_da_pagina.com".to_string()).unwrap();
  
     let tokens = token_recognizer::extract_tokens(html_page);
 
     for token in tokens {
-
         if dfa.test(&token) {
             println!("===== Achoou um email: {}", token);
-        }
+        } 
+        // else {
+        //     println!("Não email: {}", token);
+        // }
     }
 }
 
