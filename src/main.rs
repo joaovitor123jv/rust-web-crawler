@@ -2,29 +2,47 @@ mod lib;
 mod email_recognizer;
 mod token_recognizer;
 
-fn test_chain(chain: &str, dfa: &lib::DFA) {
-    println!("O resultado do teste da cadeia {} foi {}", chain, dfa.test(chain));
-}
-
-
 fn main() {
-    println!("Testando importação de funcoes");
+    let mut links: Vec<String> = ["http://uma_url_aqui.com.br".to_string()].to_vec();
+    let mut emails: Vec<String> = Vec::new();
+    let mut iteration = 0;
 
-    let dfa = email_recognizer::create_email_recognizer().unwrap();
+    let emails_limit = 33;
 
-    // dfa.show();
+    while emails.len() < emails_limit {
+        let html_page = lib::web::get_page(links[iteration].clone());
 
-    let html_page = lib::web::get_page("https://url_da_pagina.com".to_string()).unwrap();
- 
-    let tokens = token_recognizer::extract_tokens(html_page);
+        let html_page = match html_page {
+            Ok(page) => page,
+            Err(_error) => "".to_string()
+        };
 
-    for token in tokens {
-        if dfa.test(&token) {
-            println!("===== Achoou um email: {}", token);
-        } 
-        // else {
-        //     println!("Não email: {}", token);
-        // }
+        if html_page != "".to_string() {
+            println!("\nGetting html from url = {}", links[iteration]);
+            let tokens = token_recognizer::extract_tokens(html_page);
+
+            let page_emails = email_recognizer::extract_emails(tokens.clone());
+
+            println!("\tPage emails: {:?}", page_emails);
+
+            for link in lib::web::extract_links(tokens.clone()) {
+                links.push(link.to_string());
+            }
+
+            for email in page_emails {
+                emails.push(email);
+            }
+        }
+
+        iteration += 1;
     }
+
+    println!("\n\n---------------------------------");
+    println!("Emails encontrados = {:?}", emails);
+    println!("\nQuantidade de Links encontrados = {}", links.len());
+    println!("Quantidade de páginas web buscadas = {}", iteration + 1);
+
+
+    // let links: Vec<String> = lib::web::extract_page_links(html_page);
 }
 

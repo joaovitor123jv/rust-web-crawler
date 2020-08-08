@@ -1,10 +1,9 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
-#[derive(Hash, Eq, PartialEq, Debug)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct Transition {
-    from: String,
-    to: String,
-    when: char
+    when: char,
+    to: String
 }
 
 // Deterministic Finite Automaton
@@ -13,12 +12,11 @@ pub struct DFA {
     pub final_state: String,
     pub actual_state: String,
     alphabet: HashSet<char>,
-    states: HashSet<String>, // Conjunto de Estados
-    transitions: HashSet<Transition> // Função de transição
+    states: HashSet<String>,
+    transitions: HashMap<String, Vec<Transition>>
 }
 
 impl DFA {
-    // Construtor
     pub fn new(initial_state: &str, final_state: &str, alphabet: &str, states: &[&str]) -> Result<DFA, String> {
         let mut obtained_states = HashSet::new();
 
@@ -46,7 +44,7 @@ impl DFA {
             actual_state: initial_state.to_string(),
             alphabet: obtained_alphabet,
             states: obtained_states,
-            transitions: HashSet::new()
+            transitions: HashMap::new()
         })
     }
 
@@ -63,34 +61,51 @@ impl DFA {
             return Err("O simbolo recebido precisa pertencer ao alfabeto do automato".to_string());
         }
 
-        self.transitions.insert(Transition {
-            from: from_state.to_string(),
-            to: to_state.to_string(),
-            when: symbol
-        });
+        let raw_transitions = self.transitions.get(from_state);
+        let mut raw_transitions: Vec<Transition> = match raw_transitions {
+            Some(transition) => transition.clone(),
+            None => Vec::new()
+        };
 
-        Ok(true)
+        let requested_transition = Transition { when: symbol, to: to_state.to_string() };
+
+        if raw_transitions.contains(&requested_transition) {
+            Ok(true)
+        } else {
+            raw_transitions.push(Transition {
+                when: symbol,
+                to: to_state.to_string()
+            });
+
+            self.transitions.insert(from_state.to_string(), raw_transitions);
+            Ok(true)
+        }
     }
 
-    pub fn register(&mut self, input: char) -> bool {
-        if !self.alphabet.contains(&input) {
-            return false;
-        }
-
-        let next_transition: Vec<&Transition> = self
-            .transitions
-            .iter()
-            .filter(|&t| (t.when == input) && (t.from == self.actual_state))
-            .collect();
-
-        if next_transition.first() == None {
-            return false;
-        }
-
-        self.actual_state = next_transition.first().unwrap().to.clone();
-
-        true
-    }
+    // pub fn register(&mut self, input: char) -> bool {
+    //     if !self.alphabet.contains(&input) {
+    //         return false;
+    //     }
+    //
+    //     let state_transitions = self.transitions.get(&self.actual_state);
+    //
+    //     let state_transitions: Vec<Transition> = match state_transitions {
+    //         Some(transition) => transition.clone(),
+    //         None => Vec::new()
+    //     };
+    //
+    //     let next_transition: Vec<&Transition> = state_transitions
+    //         .iter()
+    //         .filter(|&transition| transition.when == input)
+    //         .collect();
+    //
+    //     if next_transition.first() == None {
+    //         false
+    //     } else {
+    //         self.actual_state = next_transition.first().unwrap().to.clone();
+    //         true
+    //     }
+    // }
 
     pub fn test(&self, input_chain: &str) -> bool {
         let mut actual_state: String = self.initial_state.clone();
@@ -100,12 +115,20 @@ impl DFA {
                 return false;
             }
 
-            let next_transition: Vec<&Transition> = self.transitions.iter().filter(|&t| (t.when == input) && (t.from == actual_state)).collect();
+            let state_transitions = self.transitions.get(&actual_state);
+            let state_transitions: Vec<Transition> = match state_transitions {
+                Some(transition) => transition.clone(),
+                None => Vec::new()
+            };
+
+            let next_transition: Vec<&Transition> = state_transitions
+                .iter()
+                .filter(|&transition| transition.when == input)
+                .collect();
 
             if next_transition.first() == None {
                 return false;
             }
-
             actual_state = next_transition.first().unwrap().to.clone();
         }
 
@@ -116,29 +139,29 @@ impl DFA {
         }
     }
 
-    pub fn show(&self) {
-        println!("-----------------");
-        println!("O estado inicial é: {}, O estado final é: {}", self.initial_state, self.final_state);
-
-        println!("\nOs estados do DFA são:");
-
-        for state in &self.states {
-            print!(" {} ", state);
-        }
-
-
-        println!("\nO alfabeto é composto pelos símbolos:");
-        for symbol in &self.alphabet {
-            print!(" {} ", symbol);
-        }
-
-        println!("\nAs transições disponíveis são:");
-
-        for transition in &self.transitions {
-            println!(" {}({}): {} ", transition.from, transition.when, transition.to);
-        }
-
-        println!("-----------------");
-    }
+    // pub fn show(&self) {
+    //     println!("-----------------");
+    //     println!("O estado inicial é: {}, O estado final é: {}", self.initial_state, self.final_state);
+    //
+    //     println!("\nOs estados do DFA são:");
+    //
+    //     for state in &self.states {
+    //         print!(" {} ", state);
+    //     }
+    //
+    //
+    //     println!("\nO alfabeto é composto pelos símbolos:");
+    //     for symbol in &self.alphabet {
+    //         print!(" {} ", symbol);
+    //     }
+    //
+    //     println!("\nAs transições disponíveis são:");
+    //
+    //     for transition in &self.transitions {
+    //         println!("{:?}", transition);
+    //     }
+    //
+    //     println!("-----------------");
+    // }
 }
 

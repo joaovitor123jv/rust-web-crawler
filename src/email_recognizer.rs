@@ -1,6 +1,5 @@
 use crate::lib;
 
-// TODO: Diferenciar emails com caracteres maiúsculos e minusculos
 fn add_generic_transition(origin_state: &str, destiny_state: &str, dfa: &mut lib::DFA) -> Result<bool, String> {
     dfa.add_transition(origin_state, destiny_state, '0')?;
     dfa.add_transition(origin_state, destiny_state, '1')?;
@@ -106,4 +105,13 @@ pub fn create_email_recognizer() -> Result<lib::DFA, String> {
     dfa.add_transition("user_type", "trash", '.')?;
 
     Ok(dfa)
+}
+
+pub fn extract_emails(tokens: Vec<String>) -> Vec<String> {
+    let dfa = create_email_recognizer().unwrap();
+    tokens
+        .iter()
+        .filter(|token| dfa.test(token))
+        .map(|token| token.to_string())
+        .collect()
 }
